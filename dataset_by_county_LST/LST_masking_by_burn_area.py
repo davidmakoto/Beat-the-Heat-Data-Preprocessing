@@ -46,8 +46,8 @@ def main():
     os.chdir(img_QA_dir)
     qualityFiles = glob.glob('MOD11A1.006_QC_Day**.tif')                            # Search the directory for the associated 
     os.chdir(img_files_dir)
-    # EVIFiles        = glob.glob('MOD13A1.006__500m_16_days_NDVI_**.tif')          # Search for and create a list of EVI files
-    # EVIqualityFiles = glob.glob('MOD13A1.006__500m_16_days_VI_Quality**.tif')     # Search the directory for the associated quality .tifs
+    # LSTFiles        = glob.glob('MOD13A1.006__500m_16_days_NDVI_**.tif')          # Search for and create a list of EVI files
+    # qualityFiles = glob.glob('MOD13A1.006__500m_16_days_VI_Quality**.tif')     # Search the directory for the associated quality .tifs
     # EVIlut          = glob.glob('MOD13A1-006-500m-16-days-VI-Quality-lookup.csv') # Search for look up table 
 
     # EVI_v6_QA_lut = pd.read_csv(EVIlut[0])                                    # Read in the lut
@@ -63,6 +63,8 @@ def main():
     os.chdir(BA_QA_dir) 
     BAqualityFiles =glob.glob('MCD64A1.006_QA_**.tif')    # Search the directory for the associated quality .tifs
     # lut = glob.glob('-006-QA-lookup.csvMCD64A1')    
+
+    #! is this in the BA or input_img dir?
     os.chdir(img_files_dir)  # LUTs are in NDVI folder
     lut = glob.glob('MCD64A1-006-QA-lookup.csv')                 # Search for look up table 
     v6_BAQA_lut = pd.read_csv(lut[0])     # Read in the lut
@@ -89,9 +91,9 @@ def main():
 
 
     NDVI_result = []
-    for i in range(0, len(EVIFiles)):
-        EVI = gdal.Open(EVIFiles[i])                    # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
-        EVIquality = gdal.Open(EVIqualityFiles[i])                       # Open the first quality file
+    for i in range(len(LSTFiles) - 1, len(LSTFiles)):
+        EVI = gdal.Open(LSTFiles[i])                    # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
+        EVIquality = gdal.Open(qualityFiles[i])                       # Open the first quality file
         
         
         EVIBand = EVI.GetRasterBand(1)                  # Read the band (layer)
@@ -102,10 +104,10 @@ def main():
 
         # creates file name
         # File name metadata:
-        EVIproductId = EVIFiles[i].split('_')[0]                                      # First: product name
-        EVIlayerId = EVIFiles[i].split(EVIproductId + '_')[1].split('_doy')[0]        # Second: layer name
-        EVIyeardoy = EVIFiles[i].split(EVIlayerId+'_doy')[1].split('_aid')[0]         # Third: date
-        EVIaid = EVIFiles[i].split(EVIyeardoy+'_')[1].split('.tif')[0]                # Fourth: unique ROI identifier (aid)
+        EVIproductId = LSTFiles[i].split('_')[0]                                      # First: product name
+        EVIlayerId = LSTFiles[i].split(EVIproductId + '_')[1].split('_doy')[0]        # Second: layer name
+        EVIyeardoy = LSTFiles[i].split(EVIlayerId+'_doy')[1].split('_aid')[0]         # Third: date
+        EVIaid = LSTFiles[i].split(EVIyeardoy+'_')[1].split('.tif')[0]                # Fourth: unique ROI identifier (aid)
         EVIdate = dt.datetime.strptime(EVIyeardoy, '%Y%j').strftime('%m/%d/%Y')       # Convert YYYYDDD to MM/DD/YYYY
         EVI_year = dt.datetime.strptime(EVIyeardoy, '%Y%j').year                      #* getting m and y of NDVI tif file to be compared to BA file
         EVI_month = dt.datetime.strptime(EVIyeardoy, '%Y%j').month   
@@ -183,7 +185,7 @@ def main():
             os.chdir(img_files_dir)  # changes back to NDVI input dir for steps in beg of loop
  
     
-    result_df = pd.DataFrame(NDVI_result, columns=["Date","NDVI"])
+    result_df = pd.DataFrame(NDVI_result, columns=["Date","LST"])
 
 
     result_df['Date'] = pd.to_datetime(result_df['Date'], format='%m/%d/%Y')
@@ -192,7 +194,7 @@ def main():
 
     result_series["NDVI"] = result_series["NDVI"].interpolate(method='linear')
     os.chdir(out_dir)
-    result_series.to_csv('NDVI2019_2020.csv', index = True)
+    result_series.to_csv('LST2019_2020.csv', index = True)
     print(result_series)   # Export statistics to CSV
 
 
