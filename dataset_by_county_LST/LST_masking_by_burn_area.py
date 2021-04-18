@@ -29,35 +29,41 @@ def main():
     shapes = af.extract_shapes_from_county_geometry(CA_counties_geodf)
  
      # Setting up input directories
-    out_dir = af.create_abs_path_from_relative('output')
-    BAinDir = af.create_abs_path_from_relative('burn_area_files\\burn_date')  # i think this is being used for BA and QA
-    NDVI_inDir = af.create_abs_path_from_relative('input_data_files')
+    out_dir          = af.create_abs_path_from_relative('output')
+    img_files_dir    = af.create_abs_path_from_relative('input_data_files\\day')
+    img_QA_dir       = af.create_abs_path_from_relative('input_data_files\\QC_day')
     BA_burn_date_dir = af.create_abs_path_from_relative('burn_area_files\\burn_date')
-    BA_QA_dir = af.create_abs_path_from_relative('burn_area_files\\QA')
+    BA_QA_dir        = af.create_abs_path_from_relative('burn_area_files\\QA')
 
-    # BAinDir = 'C:/Users/SASUKE/Desktop/Spring2021/COMP491/NDVI_BA_ALL/'  # Path to the Burn Area Files
-    # NDVI_inDir = 'C:/Users/SASUKE/Desktop/Spring2021/COMP491/NDVI_BA_ALL/'  #Path to NDVI files
     # changing working directory
-    os.chdir(NDVI_inDir)                                                             # Change to working directory
-    out_dir = os.path.normpath(os.path.split(BAinDir)[0] + os.sep + 'output') + '\\'  # Create and set output directory
+    os.chdir(img_files_dir)                                                             # Change to working directory
+    out_dir = os.path.normpath(os.path.split(BA_burn_date_dir)[0] + os.sep + 'output') + '\\'  # Create and set output directory
     if not os.path.exists(out_dir): os.makedirs(out_dir)
 
-
     # create references to files
-    EVIFiles        = glob.glob('MOD13A1.006__500m_16_days_NDVI_**.tif')          # Search for and create a list of EVI files
-    EVIqualityFiles = glob.glob('MOD13A1.006__500m_16_days_VI_Quality**.tif')     # Search the directory for the associated quality .tifs
-    EVIlut          = glob.glob('MOD13A1-006-500m-16-days-VI-Quality-lookup.csv') # Search for look up table 
+    LSTFiles     = glob.glob('MOD11A1.006_LST_Day_1km**.tif')
+    lut          = glob.glob('MOD11A1-006-QC-Day-lookup.csv')                       # Search for look up table   
+    os.chdir(img_QA_dir)
+    qualityFiles = glob.glob('MOD11A1.006_QC_Day**.tif')                            # Search the directory for the associated 
+    os.chdir(img_files_dir)
+    # EVIFiles        = glob.glob('MOD13A1.006__500m_16_days_NDVI_**.tif')          # Search for and create a list of EVI files
+    # EVIqualityFiles = glob.glob('MOD13A1.006__500m_16_days_VI_Quality**.tif')     # Search the directory for the associated quality .tifs
+    # EVIlut          = glob.glob('MOD13A1-006-500m-16-days-VI-Quality-lookup.csv') # Search for look up table 
 
-    EVI_v6_QA_lut = pd.read_csv(EVIlut[0])                                    # Read in the lut
+    # EVI_v6_QA_lut = pd.read_csv(EVIlut[0])                                    # Read in the lut
+    img_QA_lut = pd.read_csv(lut[0])
 
-    EVIgoodQuality = af.extracting_good_quality_vals_from_lut(EVI_v6_QA_lut)
+    # EVIgoodQuality = af.extracting_good_quality_vals_from_lut(EVI_v6_QA_lut)
+    img_good_quality = af.extracting_good_quality_vals_from_lut(lut)
+#! im here rn
+
 
     os.chdir(BA_burn_date_dir)                                                             # Change to working directory
     BAFiles = glob.glob('MCD64A1.006_Burn_Date_**.tif') # Search for and create a list of BA files
     os.chdir(BA_QA_dir) 
     BAqualityFiles =glob.glob('MCD64A1.006_QA_**.tif')    # Search the directory for the associated quality .tifs
     # lut = glob.glob('-006-QA-lookup.csvMCD64A1')    
-    os.chdir(NDVI_inDir)  # LUTs are in NDVI folder
+    os.chdir(img_files_dir)  # LUTs are in NDVI folder
     lut = glob.glob('MCD64A1-006-QA-lookup.csv')                 # Search for look up table 
     v6_BAQA_lut = pd.read_csv(lut[0])     # Read in the lut
     # Include good quality based on MODLAND
@@ -174,7 +180,7 @@ def main():
             
                 NDVI_result.append([EVIdate,EVI_mean])
 
-            os.chdir(NDVI_inDir)  # changes back to NDVI input dir for steps in beg of loop
+            os.chdir(img_files_dir)  # changes back to NDVI input dir for steps in beg of loop
  
     
     result_df = pd.DataFrame(NDVI_result, columns=["Date","NDVI"])
