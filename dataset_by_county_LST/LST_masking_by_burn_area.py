@@ -28,7 +28,7 @@ def main():
     CA_counties_geodf = af.read_geojson_geodf()
     shapes = af.extract_shapes_from_county_geometry(CA_counties_geodf)
  
-     # Setting up input directories
+    # Setting up input directories
     out_dir          = af.create_abs_path_from_relative('output')
     img_files_dir    = af.create_abs_path_from_relative('input_data_files\\day')
     img_QA_dir       = af.create_abs_path_from_relative('input_data_files\\QC_day')
@@ -54,7 +54,19 @@ def main():
     img_QA_lut = pd.read_csv(lut[0])
 
     # EVIgoodQuality = af.extracting_good_quality_vals_from_lut(EVI_v6_QA_lut)
-    img_good_quality = af.extracting_good_quality_vals_from_lut(lut)
+
+    #################
+    # Include good quality based on MODLAND
+    # lut = lut[lut['MODLAND'].isin([
+    #     'LST produced, good quality, not necessary to examine more detailed QA',
+    #     'LST produced, other quality, recommend examination of more detailed QA'])]
+    #
+    # # Exclude lower quality VI usefulness
+    # VIU = ["LST not produced due to cloud effects, LST not produced primarily due to reasons other than cloud"]
+    # lut = lut[~lut['MODLAND'].isin(VIU)]
+    # lut
+    #################
+    img_good_quality = af.extracting_good_quality_vals_from_lut_LST(img_QA_lut)
 #! im here rn
 
 
@@ -65,19 +77,19 @@ def main():
     # lut = glob.glob('-006-QA-lookup.csvMCD64A1')    
 
     #! is this in the BA or input_img dir?
-    os.chdir(img_files_dir)  # LUTs are in NDVI folder
-    lut = glob.glob('MCD64A1-006-QA-lookup.csv')                 # Search for look up table 
-    v6_BAQA_lut = pd.read_csv(lut[0])     # Read in the lut
+    os.chdir(BA_QA_dir) #mite be wrong dir  # LUTs are in input img folder
+    lut_BA = glob.glob('MCD64A1-006-QA-lookup.csv')                 # Search for look up table
+    BAQA_lut = pd.read_csv(lut_BA[0])     # Read in the lut
     # Include good quality based on MODLAND
-    v6_BAQA_lut = v6_BAQA_lut[v6_BAQA_lut['Valid data'].isin([True])]
+    BAQA_lut = BAQA_lut[BAQA_lut['Valid data'].isin([True])]
 
 
     # Special circumstances unburned
     SP =["Too few training observations or insufficient spectral separability between burned and unburned classes"]
-    v6_BAQA_lut = v6_BAQA_lut[~v6_BAQA_lut['Special circumstances unburned'].isin(SP)]
-    v6_BAQA_lut
+    BAQA_lut = BAQA_lut[~BAQA_lut['Special circumstances unburned'].isin(SP)]
+    BAQA_lut
 
-    BAgoodQuality = list(v6_BAQA_lut['Value']) # Retrieve list of possible QA values from the quality dataframe
+    BAgoodQuality = list(BAQA_lut['Value']) # Retrieve list of possible QA values from the quality dataframe
     BAVal = tuple(range(1, 367, 1))
 
 
@@ -86,12 +98,14 @@ def main():
     #* loop per data image
 
     #* loop idea: 
-        #* open one NDVI image 
+        #* open one NDVI image
         #*     mask one county, store data, mask county 2, store data, etc...
 
 
     NDVI_result = []
     for i in range(len(LSTFiles) - 1, len(LSTFiles)):
+        print('index of files is' + i)
+
         EVI = gdal.Open(LSTFiles[i])                    # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
         EVIquality = gdal.Open(qualityFiles[i])                       # Open the first quality file
         
@@ -113,7 +127,8 @@ def main():
         EVI_month = dt.datetime.strptime(EVIyeardoy, '%Y%j').month   
         
         ##INSERT FOR LOOP TO SELECT EACH COUNTY SHAPE
-        for x in range(0,len(shapes)):
+        for x in range(44,len(shapes)):
+            print('index of shapes is' + x)
             # Mask NDVI file by Shape
 
 
