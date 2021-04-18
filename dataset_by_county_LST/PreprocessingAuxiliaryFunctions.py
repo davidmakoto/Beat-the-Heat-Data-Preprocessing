@@ -90,6 +90,19 @@ class PreprocessingAuxiliaryFunctions:
 
         return BAgoodQuality
 
+    def extracting_good_quality_vals_from_lut_LST(self, lut):
+
+        # Include good quality based on MODLAND
+        lut = lut[lut['MODLAND'].isin([
+            'LST produced, good quality, not necessary to examine more detailed QA',
+            'LST produced, other quality, recommend examination of more detailed QA'])]
+
+        # Exclude lower quality VI usefulness
+        VIU = ["LST not produced due to cloud effects, LST not produced primarily due to reasons other than cloud"]
+        lut = lut[~lut['MODLAND'].isin(VIU)]
+        return list(lut['Value'])  # Retrieve list of possible QA values from the quality dataframe
+
+
 
     def go_to_parent_dir(self):
         path_parent = os.path.dirname(os.getcwd())
