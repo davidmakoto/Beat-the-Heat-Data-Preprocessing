@@ -71,9 +71,10 @@ def main():
     FM_result = []
 
     # Traverse through the list of FM files 
-    for i in range(721, len(FMFiles)):
+    for i in range(0, len(FMFiles)):
         os.chdir(af.FM_inDir)
         FM         = gdal.Open(FMFiles[i])                                          # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
+        os.chdir(af.FM_QA_Dir)
         FMquality  = gdal.Open(FMqualityFiles[i])                                   # Open the first quality file
         
         FMdate     = af.getFM_Date_Year_Month(FMFiles[i], "D")                      # Get the Date of the file in format MM/DD/YYYY
@@ -120,31 +121,27 @@ def main():
             FM_masked   = np.ma.MaskedArray(FMScaled, np.in1d(FMqualityData, FMgoodQuality, invert = True))         # Apply QA mask to the FM data
 
             BA_resampled = scipy.ndimage.zoom(BA_masked,0.5, order=0)                                               # Resample by a factor of 2 with nearest neighbor interpolation
-            #new_col      = np.sum(BA_resampled,1).reshape((BA_resampled.shape[0],1))
-            #BA_resampled = np.append(BA_resampled,new_col,1)
-
-            
-            #BA_resampled = np.delete(BA_resampled,BA_resampled.shape[1]-1,1)
-
-            print(BA_resampled.shape)
-            print(FM_masked.shape)
+            if (FM_masked.shape[1] != BA_resampled.shape[1]):                                                       # Remove estra column if exists
+                FM_masked = np.delete(FM_masked,-1, axis=1)
+            if (FM_masked.shape[0] != BA_resampled.shape[0]):                                                       # Remove extra row if exists
+                FM_masked = np.delete(FM_masked,0, 0)
 
             FM_BA       = np.ma.MaskedArray(FM_masked, np.in1d(BA_resampled, BAVal, invert = True))                 # Mask array, include only BurnArea
             FM_Max      = FM_BA.max()                                                                               # Get FM Max value of the Burn Area
-            currentTime = timer() - start                                                                           # calculate current running time
 
             #----- STORE IT IN RESULT DATAFRAME -----#
             FM_result.append([FMdate,FM_Max, county_fip])
             x = x+1    
 
         #print running time    
+        currentTime = timer() - start                                                                               # calculate current running time
         print('index: {}  --- FileName: {}   ---- Time Elapsed: {}  seconds'.format(i, FMFiles[i], round(currentTime,1)))
 
     # add header to output dataframe
     result_df = pd.DataFrame(FM_result, columns=["Date","FM","County_FIP"])
     
     #fill null values with mean
-    result_df['FM'].fillna(result_df['FM'].mean(), inplace=True)
+    result_df['FM'].fillna(0, inplace=True)
     
     #sort values by county fip, then by date
     result_df = result_df.sort_values(["County_FIP", "Date"], ascending=(True, True))
