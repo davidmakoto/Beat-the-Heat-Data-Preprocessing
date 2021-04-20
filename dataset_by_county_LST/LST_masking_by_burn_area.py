@@ -90,16 +90,20 @@ def main():
 
 
     NDVI_result = []
-    for i in range(len(LSTFiles) - 1, len(LSTFiles)):
+    for i in range(len(LSTFiles) - 2, len(LSTFiles)):
+    # for i in range (2):
         print('index of files is' + str(i))
 
+        os.chdir(img_files_dir)
         EVI = gdal.Open(LSTFiles[i])                    # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
+
+        os.chdir(img_QA_dir)
         EVIquality = gdal.Open(qualityFiles[i])                       # Open the first quality file
         
         
         EVIBand = EVI.GetRasterBand(1)                  # Read the band (layer)
         EVIData = EVIBand.ReadAsArray().astype('float') # Import band as an array with type float
-        
+
         EVIqualityData = EVIquality.GetRasterBand(1).ReadAsArray()       # Read in as an array
         EVIquality = None
 
@@ -114,8 +118,7 @@ def main():
         EVI_month = dt.datetime.strptime(EVIyeardoy, '%Y%j').month   
         
         ##INSERT FOR LOOP TO SELECT EACH COUNTY SHAPE
-        for x in range(44,len(shapes)):
-            print('index of shapes is' + x)
+        for x in range(44, len(shapes)):
             # Mask NDVI file by Shape
 
 
@@ -178,7 +181,7 @@ def main():
                 EVIScaled = EVIData * EVIscaleFactor              # Apply the scale factor using simple multiplication
 
                 BA_masked = np.ma.MaskedArray(BAScaled, np.in1d(BAqualityData, BAgoodQuality, invert = True))    # Apply QA mask to the BA data
-                EVI_masked = np.ma.MaskedArray(EVIScaled, np.in1d(EVIqualityData, EVIgoodQuality, invert = True))# Apply QA mask to the EVI data
+                EVI_masked = np.ma.MaskedArray(EVIScaled, np.in1d(EVIqualityData, img_good_quality, invert = True))# Apply QA mask to the EVI data
                 EVI_BA = np.ma.MaskedArray(EVI_masked, np.in1d(BA_masked, BAVal, invert = True)) # Mask array, include only BurnArea
                 EVI_mean = np.mean(EVI_BA.compressed())
             
