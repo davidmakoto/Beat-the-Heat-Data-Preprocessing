@@ -118,7 +118,7 @@ def main():
         EVI_month = dt.datetime.strptime(EVIyeardoy, '%Y%j').month   
         
         ##INSERT FOR LOOP TO SELECT EACH COUNTY SHAPE
-        for x in range(44, len(shapes)):
+        for x in range(len(shapes)):
             # Mask NDVI file by Shape
 
 
@@ -137,10 +137,6 @@ def main():
 
             #* getting name of file
             BAFileName = getBAFile(BAFiles, EVI_month, EVI_year)
-
-
-            # BA_QA_dir = af.go_to_parent_dir
-            # BA_QA_dir = af.create_abs_path_from_relative('QA')
             os.chdir(BA_QA_dir)                                                             # Change to working directory
 
             # af.go_to_parent_dir
@@ -182,6 +178,13 @@ def main():
 
                 BA_masked = np.ma.MaskedArray(BAScaled, np.in1d(BAqualityData, BAgoodQuality, invert = True))    # Apply QA mask to the BA data
                 EVI_masked = np.ma.MaskedArray(EVIScaled, np.in1d(EVIqualityData, img_good_quality, invert = True))# Apply QA mask to the EVI data
+
+                BA_resampled = scipy.ndimage.zoom(BA_masked, 0.5, order=0)  # Resample by a factor of 2 with nearest neighbor interpolation
+                if (EVI_masked.shape[1] != BA_resampled.shape[1]):  # Remove extra column if exists
+                    EVI_masked = np.delete(EVI_masked, -1, axis=1)
+                if (EVI_masked.shape[0] != BA_resampled.shape[0]):  # Remove extra row if exists
+                    EVI_masked = np.delete(EVI_masked, 0, 0)
+                
                 EVI_BA = np.ma.MaskedArray(EVI_masked, np.in1d(BA_masked, BAVal, invert = True)) # Mask array, include only BurnArea
                 EVI_mean = np.mean(EVI_BA.compressed())
             
