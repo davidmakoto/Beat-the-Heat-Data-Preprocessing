@@ -90,9 +90,8 @@ def main():
 
 
     NDVI_result = []
-    for i in range(len(LSTFiles) - 2, len(LSTFiles)):
+    for i in range(len(LSTFiles) - 10, len(LSTFiles)):
     # for i in range (2):
-        print('index of files is' + str(i))
 
         os.chdir(img_files_dir)
         EVI = gdal.Open(LSTFiles[i])                    # Read file in, starting with MOD13Q1 version 6 #* in dir input_files
@@ -121,15 +120,11 @@ def main():
         for x in range(len(shapes)):
             # Mask NDVI file by Shape
 
-
             # Mask NDVI QA file by Shape
 
             # Mask BA file by Shape
 
             # Mask BA QA file by Shape            
-                
-
-            
 
             # BA_burn_date_dir = af.go_to_parent_dir
             # BA_burn_date_dir = af.create_abs_path_from_relative('burn_area_files\\burn_date')
@@ -161,7 +156,8 @@ def main():
                 # Band metadata
                 BAFill = BABand.GetNoDataValue()                  # Returns fill value
                 BAStats = BABand.GetStatistics(True, True)        # returns min, max, mean, and standard deviation
-                BA = None                                         # Close the GeoTIFF file
+                #! error here, check BABAND is in right dir
+                # BA = None                                         # Close the GeoTIFF file
 
                 # Band metadata
                 EVIFill = EVIBand.GetNoDataValue()                # Returns fill value
@@ -185,9 +181,9 @@ def main():
                 if (EVI_masked.shape[0] != BA_resampled.shape[0]):  # Remove extra row if exists
                     EVI_masked = np.delete(EVI_masked, 0, 0)
                 
-                EVI_BA = np.ma.MaskedArray(EVI_masked, np.in1d(BA_masked, BAVal, invert = True)) # Mask array, include only BurnArea
-                EVI_mean = np.mean(EVI_BA.compressed())
-            
+                EVI_BA = np.ma.MaskedArray(EVI_masked, np.in1d(BA_resampled, BAVal, invert = True)) # Mask array, include only BurnArea
+                # EVI_mean = np.mean(EVI_BA.compressed())
+                EVI_mean = np.nanmean(EVI_BA.compressed())
                 NDVI_result.append([EVIdate,EVI_mean])
 
             os.chdir(img_files_dir)  # changes back to NDVI input dir for steps in beg of loop
