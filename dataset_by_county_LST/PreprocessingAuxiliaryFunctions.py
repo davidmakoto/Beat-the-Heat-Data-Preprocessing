@@ -14,12 +14,13 @@ class PreprocessingAuxiliaryFunctions:
     def __init__(self):
         # Setting up input directories
         self.out_dir = self.create_abs_path_from_relative('burn_area_files\\output')
-        #self.BAinDir = self.create_abs_path_from_relative('burn_area_files\\burn_date')
-        self.NDVI_inDir = self.create_abs_path_from_relative('input_data_files')
+        self.Support = self.create_abs_path_from_relative('input_data_files\\supp_files')
+        self.img_files_dir = self.create_abs_path_from_relative('input_data_files\\day')
+        self.img_QA_dir = self.create_abs_path_from_relative('input_data_files\\QC_day')
         self.BA_burn_date_dir = self.create_abs_path_from_relative('burn_area_files\\burn_date')
         self.BA_QA_dir = self.create_abs_path_from_relative('burn_area_files\\QA')
-        self.EVI_temp    = "EVI_temp.tif"
-        self.EVIQA_temp  = "EVIQA_temp.tif"
+        self.LST_temp    = "LST_temp.tif"
+        self.LSTQA_temp  = "LSTQA_temp.tif"
         self.BA_temp     = "BA_temp.tif"
         self.BAQA_temp   = "BAQA_temp.tif"
 
@@ -61,7 +62,7 @@ class PreprocessingAuxiliaryFunctions:
             county_shapes.append(shapes[i])
         return county_shapes
 
-    def extracting_good_quality_vals_from_NDVI_lut(self, lut):
+    def extracting_good_quality_vals_from_LST_lut(self, lut):
         """ Returns good quality values via look up table (LUT) """
         # Include good quality based on MODLAND
         lut = lut[lut['MODLAND'].isin(['VI produced with good quality', 'VI produced, but check other QA'])]
@@ -75,8 +76,8 @@ class PreprocessingAuxiliaryFunctions:
         lut = lut[lut['Mixed Clouds'] == 'No' ]                      # Include where mixed clouds not detected
         lut = lut[lut['Possible shadow'] == 'No' ]                   # Include where possible shadow not detected
 
-        EVIgoodQuality = list(lut['Value']) # Retrieve list of possible QA values from the quality dataframe
-        return EVIgoodQuality
+        LSTgoodQuality = list(lut['Value']) # Retrieve list of possible QA values from the quality dataframe
+        return LSTgoodQuality
 
     def extracting_good_quality_vals_from_BA_lut(self, lut):
         """ Returns good quality values via BA look up table (LUT) """
@@ -117,57 +118,59 @@ class PreprocessingAuxiliaryFunctions:
             BAproductId = x.split('_')[0]                                               # First: product name
             BAlayerId = x.split(BAproductId + '_')[1].split('_doy')[0]                  # Second: layer name
             BAyeardoy = x.split(BAlayerId+'_doy')[1].split('_aid')[0]                   # Third: date
-            file_year = dt.datetime.strptime(BAyeardoy, '%Y%j').year                    # Compares the date of the NDVI and BA to grab the right file, m and y are for NDVI tif
+            file_year = dt.datetime.strptime(BAyeardoy, '%Y%j').year                    # Compares the date of the LST and BA to grab the right file, m and y are for LST tif
             file_month = dt.datetime.strptime(BAyeardoy, '%Y%j').month
             if file_year==year  and file_month == month:
                 return(x) 
 
-    def getEVI_Date_Year_Month(self,productName, option):
+    def getLST_Date_Year_Month(self,productName, option):
         """ Input: List of File Name, option: Y=year, M=month, D=date """
         """ Returns: int Month or int Year, or String Date format MM/DD/YYYY"""
-        EVIproductId = productName.split('_')[0]                                      # First: product name
-        EVIlayerId   = productName.split(EVIproductId + '_')[1].split('_doy')[0]      # Second: layer name
-        EVIyeardoy   = productName.split(EVIlayerId+'_doy')[1].split('_aid')[0]       # Third: date
-        EVIaid       = productName.split(EVIyeardoy+'_')[1].split('.tif')[0]          # Fourth: unique ROI identifier (aid)
-        EVIdate      = dt.datetime.strptime(EVIyeardoy, '%Y%j').strftime('%m/%d/%Y')  # Convert YYYYDDD to MM/DD/YYYY
-        EVI_year     = dt.datetime.strptime(EVIyeardoy, '%Y%j').year
-        EVI_month    = dt.datetime.strptime(EVIyeardoy, '%Y%j').month 
+        LSTproductId = productName.split('_')[0]                                      # First: product name
+        LSTlayerId   = productName.split(LSTproductId + '_')[1].split('_doy')[0]      # Second: layer name
+        LSTyeardoy   = productName.split(LSTlayerId+'_doy')[1].split('_aid')[0]       # Third: date
+        LSTaid       = productName.split(LSTyeardoy+'_')[1].split('.tif')[0]          # Fourth: unique ROI identifier (aid)
+        LSTdate      = dt.datetime.strptime(LSTyeardoy, '%Y%j').strftime('%m/%d/%Y')  # Convert YYYYDDD to MM/DD/YYYY
+        LST_year     = dt.datetime.strptime(LSTyeardoy, '%Y%j').year
+        LST_month    = dt.datetime.strptime(LSTyeardoy, '%Y%j').month 
         if option == "Y":
-            return(EVI_year) 
+            return(LST_year) 
         elif option == "M":
-            return(EVI_month)
+            return(LST_month)
         else:
-            return(EVIdate)
+            return(LSTdate)
 
-    def maskByShapefileAndStore(self, EVIFile, EVIqualityFile, BAFileName, BAQAFileName, county_shape):
-        # Change to NDVI directory
-        os.chdir(self.NDVI_inDir) #~ i think this is all it needs come back to this
-        EVIFile     = rasterio.open(EVIFile, 'r+')                                              # load NDVI 
-        EVIQAFile   = rasterio.open(EVIqualityFile, 'r+')                                       # load NDVI QA tif file
+    #def maskByShapefileAndStore(self, LSTFile, LSTqualityFile, BAFileName, BAQAFileName, county_shape):
+    def maskByShapefileAndStore(self, LSTFile, LSTqualityFile, county_shape):
+        # Change to LST directory
+        os.chdir(self.img_files_dir)                                                            
+        LSTFile     = rasterio.open(LSTFile, 'r+')                                              # load LST 
+        os.chdir(self.img_QA_dir)                                                               # change to QA directory
+        LSTQAFile   = rasterio.open(LSTqualityFile, 'r+')                                       # load LST QA tif file
 
         # Change to BA directory    
-        os.chdir(self.BA_burn_date_dir)
-        BAFile      = rasterio.open(BAFileName, 'r+')                                           # load BA tif file
-        os.chdir(self.BA_QA_dir)
-        BAQAFile    = rasterio.open(BAQAFileName, 'r+')                                         # load BA QA tif file
+        #os.chdir(self.BA_burn_date_dir)
+        #BAFile      = rasterio.open(BAFileName, 'r+')                                           # load BA tif file
+        #os.chdir(self.BA_QA_dir)
+        #BAQAFile    = rasterio.open(BAQAFileName, 'r+')                                         # load BA QA tif file
 
         # Mask all 4 tif files by the shapefile
-        EVI_out_image, EVI_out_transform     = rasterio.mask.mask(EVIFile, county_shape, crop=True)     
-        EVIQA_out_image, EVIQA_out_transform = rasterio.mask.mask(EVIQAFile, county_shape, crop=True)   
-        BA_out_image, BA_out_transform       = rasterio.mask.mask(BAFile, county_shape, crop=True)      
-        BAQA_out_image, BAQA_out_transform   = rasterio.mask.mask(BAQAFile, county_shape, crop=True)   
+        LST_out_image, LST_out_transform     = rasterio.mask.mask(LSTFile, county_shape, crop=True)     
+        LSTQA_out_image, LSTQA_out_transform = rasterio.mask.mask(LSTQAFile, county_shape, crop=True)   
+        #BA_out_image, BA_out_transform       = rasterio.mask.mask(BAFile, county_shape, crop=True)      
+        #BAQA_out_image, BAQA_out_transform   = rasterio.mask.mask(BAQAFile, county_shape, crop=True)   
 
         # Get Metadata from source file and prepare for output file
-        EVI_out_meta    = EVIFile.meta                                                                 
-        EVIQA_out_meta  = EVIQAFile.meta                                                               
-        BA_out_meta     = BAFile.meta                                                                  
-        BAQA_out_meta   = BAQAFile.meta                                                                
+        LST_out_meta    = LSTFile.meta                                                                 
+        LSTQA_out_meta  = LSTQAFile.meta                                                               
+        #BA_out_meta     = BAFile.meta                                                                  
+        #BAQA_out_meta   = BAQAFile.meta                                                                
 
         # Update output Matedata and send to a temp files.
-        self.send_to_file(EVI_out_meta, EVI_out_transform, EVI_out_image, self.EVI_temp)               
-        self.send_to_file(EVIQA_out_meta, EVIQA_out_transform, EVIQA_out_image, self.EVIQA_temp)       
-        self.send_to_file(BA_out_meta, BA_out_transform, BA_out_image, self.BA_temp)                   
-        self.send_to_file(BAQA_out_meta, BAQA_out_transform, BAQA_out_image, self.BAQA_temp)           
+        self.send_to_file(LST_out_meta, LST_out_transform, LST_out_image, self.LST_temp)               
+        self.send_to_file(LSTQA_out_meta, LSTQA_out_transform, LSTQA_out_image, self.LSTQA_temp)       
+        #self.send_to_file(BA_out_meta, BA_out_transform, BA_out_image, self.BA_temp)                   
+        #self.send_to_file(BAQA_out_meta, BAQA_out_transform, BAQA_out_image, self.BAQA_temp)           
 
     def send_to_file(self, out_metadata, out_transform, output_image, out_file_name):
         #update metadata
