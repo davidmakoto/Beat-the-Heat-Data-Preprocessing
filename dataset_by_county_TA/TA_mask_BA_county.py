@@ -85,7 +85,7 @@ def main():
         os.chdir(af.BA_QA_dir)
         BAQAFileName= af.getBAFileName(BAqualityFiles, FM_month, FM_year)           # Get BA QA filename for the current FM file
         BAscaleFactor = float(1.0)                                                  # Set BA Scale factor
-        FMscaleFactor = float(1.0)                                               # Set FM Scale factor
+        FMscaleFactor = float(1.0)                                                  # Set FM Scale factor
         x=0
         for county_masked in shapes:
             county_fip = COUNTY_FIPS[x]
