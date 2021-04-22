@@ -120,8 +120,8 @@ class PreprocessingAuxiliaryFunctions:
 
 
 
-
-    def maskByShapefileAndStore(self, FMFile, FMqualityFile, BAFileName, BAQAFileName, county_shape):
+    #def maskByShapefileAndStore(self, FMFile, FMqualityFile, BAFileName, BAQAFileName, county_shape):
+    def maskByShapefileAndStore(self, FMFile, FMqualityFile, county_shape):
         # Change to FM directory
         os.chdir(self.FM_inDir) #~ i think this is all it needs come back to this
         FMFile     = rasterio.open(FMFile, 'r+')                                              # load FM 
@@ -129,28 +129,28 @@ class PreprocessingAuxiliaryFunctions:
         FMQAFile   = rasterio.open(FMqualityFile, 'r+')                                       # load FM QA tif file
 
         # Change to BA directory    
-        os.chdir(self.BA_burn_date_dir)
-        BAFile      = rasterio.open(BAFileName, 'r+')                                           # load BA tif file
-        os.chdir(self.BA_QA_dir)
-        BAQAFile    = rasterio.open(BAQAFileName, 'r+')                                         # load BA QA tif file
+        #os.chdir(self.BA_burn_date_dir)
+        #BAFile      = rasterio.open(BAFileName, 'r+')                                           # load BA tif file
+        #os.chdir(self.BA_QA_dir)
+        #BAQAFile    = rasterio.open(BAQAFileName, 'r+')                                         # load BA QA tif file
 
         # Mask all 4 tif files by the shapefile
         FM_out_image, FM_out_transform     = rasterio.mask.mask(FMFile, county_shape, crop=True)     
         FMQA_out_image, FMQA_out_transform = rasterio.mask.mask(FMQAFile, county_shape, crop=True)   
-        BA_out_image, BA_out_transform       = rasterio.mask.mask(BAFile, county_shape, crop=True)      
-        BAQA_out_image, BAQA_out_transform   = rasterio.mask.mask(BAQAFile, county_shape, crop=True)   
+        #BA_out_image, BA_out_transform       = rasterio.mask.mask(BAFile, county_shape, crop=True)      
+        #BAQA_out_image, BAQA_out_transform   = rasterio.mask.mask(BAQAFile, county_shape, crop=True)   
 
         # Get Metadata from source file and prepare for output file
         FM_out_meta    = FMFile.meta                                                                 
         FMQA_out_meta  = FMQAFile.meta                                                               
-        BA_out_meta     = BAFile.meta                                                                  
-        BAQA_out_meta   = BAQAFile.meta                                                                
+        #BA_out_meta     = BAFile.meta                                                                  
+        #BAQA_out_meta   = BAQAFile.meta                                                                
 
         # Update output Matedata and send to a temp files.
         self.send_to_file(FM_out_meta, FM_out_transform, FM_out_image, self.FM_temp)               
         self.send_to_file(FMQA_out_meta, FMQA_out_transform, FMQA_out_image, self.FMQA_temp)       
-        self.send_to_file(BA_out_meta, BA_out_transform, BA_out_image, self.BA_temp)                   
-        self.send_to_file(BAQA_out_meta, BAQA_out_transform, BAQA_out_image, self.BAQA_temp)           
+        #self.send_to_file(BA_out_meta, BA_out_transform, BA_out_image, self.BA_temp)                   
+        #self.send_to_file(BAQA_out_meta, BAQA_out_transform, BAQA_out_image, self.BAQA_temp)           
 
     def send_to_file(self, out_metadata, out_transform, output_image, out_file_name):
         #update metadata
