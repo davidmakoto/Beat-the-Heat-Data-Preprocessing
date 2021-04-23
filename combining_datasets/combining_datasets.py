@@ -50,14 +50,14 @@ def main():
     #     TA['Class'][idx] = 'Fire'
 
 
-    # TA['Class'].value_counts()
-    # NDVI = NDVI.reindex(list(range(0, 731))).reset_index(drop=True)
-    #
-    # data = [NDVI["NDVI"], LST["LST"], TA["TA"], TA["Class"]]
-    # Cols_name = ["NDVI", "LST", "TA", "Class"]
-    #
-    # CA_Wildfires = pd.concat(data, axis=1, keys=Cols_name)
-    # CA_Wildfires['NDVI'].isna().sum()
+    TA['Class'].value_counts()
+    NDVI = NDVI.reindex(list(range(0, 731))).reset_index(drop=True)
+
+    data = [NDVI["NDVI"], LST["LST"], TA["TA"], TA["Class"]]
+    Cols_name = ["NDVI", "LST", "TA", "Class"]
+
+    CA_Wildfires = pd.concat(data, axis=1, keys=Cols_name)
+    CA_Wildfires['NDVI'].isna().sum()
 
 
 if __name__ == '__main__':

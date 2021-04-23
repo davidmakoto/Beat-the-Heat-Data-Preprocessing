@@ -55,15 +55,15 @@ def main():
     EVIgoodQuality = af.extracting_good_quality_vals_from_NDVI_lut(EVI_v6_QA_lut)   # print(EVIqualityFiles)  # debugging output
 
     ###### Burn Area Files
-    os.chdir(af.BA_burn_date_dir)                                                   # Change to working directory
-    BAFiles         = glob.glob('MCD64A1.006_Burn_Date_**.tif')                     # Search for and create a list of BA files
-    os.chdir(af.BA_QA_dir) 
-    BAqualityFiles  = glob.glob('MCD64A1.006_QA_**.tif')                            # Search the directory for the associated quality .tifs
-    os.chdir(af.NDVI_inDir)                                                            # LUTs are in NDVI folder
-    BAlut           = glob.glob('MCD64A1-006-QA-lookup.csv')                        # Search for BA look up table 
-    v6_BAQA_lut     = pd.read_csv(BAlut[0])                                           # Read in the lut
-    BAgoodQuality   = af.extracting_good_quality_vals_from_BA_lut(v6_BAQA_lut)      # Retrieve list of possible QA values from the quality dataframe
-    BAVal = tuple(range(0, 367, 1))                                                 # List of numbers between 1-366. Used when masking by BA 
+    #os.chdir(af.BA_burn_date_dir)                                                   # Change to working directory
+    ##BAFiles         = glob.glob('MCD64A1.006_Burn_Date_**.tif')                     # Search for and create a list of BA files
+    #os.chdir(af.BA_QA_dir) 
+    #BAqualityFiles  = glob.glob('MCD64A1.006_QA_**.tif')                            # Search the directory for the associated quality .tifs
+    #os.chdir(af.NDVI_inDir)                                                            # LUTs are in NDVI folder
+    #BAlut           = glob.glob('MCD64A1-006-QA-lookup.csv')                        # Search for BA look up table 
+    #v6_BAQA_lut     = pd.read_csv(BAlut[0])                                           # Read in the lut
+    #BAgoodQuality   = af.extracting_good_quality_vals_from_BA_lut(v6_BAQA_lut)      # Retrieve list of possible QA values from the quality dataframe
+    #BAVal = tuple(range(0, 367, 1))                                                 # List of numbers between 1-366. Used when masking by BA 
     
     ## Initialize Dataframe for final results
     NDVI_result = []
@@ -77,16 +77,17 @@ def main():
         EVIdate     = af.getEVI_Date_Year_Month(EVIFiles[i], "D")                   # Get the Date of the file in format MM/DD/YYYY
         EVI_year    = af.getEVI_Date_Year_Month(EVIFiles[i], "Y")                   # Get the year of the file 
         EVI_month   = af.getEVI_Date_Year_Month(EVIFiles[i], "M")                   # Get the month of the file
-        os.chdir(af.BA_burn_date_dir)
-        BAFileName  = af.getBAFileName(BAFiles, EVI_month, EVI_year)                # Get BA filename for the current NDVI file
-        os.chdir(af.BA_QA_dir)
-        BAQAFileName= af.getBAFileName(BAqualityFiles, EVI_month, EVI_year)         # Get BA QA filename for the current NDVI file
-        BAscaleFactor = float(1.0)                                                  # Set BA Scale factor
+        #os.chdir(af.BA_burn_date_dir)
+        #BAFileName  = af.getBAFileName(BAFiles, EVI_month, EVI_year)                # Get BA filename for the current NDVI file
+        #os.chdir(af.BA_QA_dir)
+        #BAQAFileName= af.getBAFileName(BAqualityFiles, EVI_month, EVI_year)         # Get BA QA filename for the current NDVI file
+        #BAscaleFactor = float(1.0)                                                  # Set BA Scale factor
         EVIscaleFactor = float(0.0001)                                              # Set EVI Scale factor
         x=0
         for county_masked in shapes:
             county_fip = COUNTY_FIPS[x]
-            af.maskByShapefileAndStore(EVIFiles[i],EVIqualityFiles[i], BAFileName, BAQAFileName, county_masked)
+            #af.maskByShapefileAndStore(EVIFiles[i],EVIqualityFiles[i], BAFileName, BAQAFileName, county_masked)
+            af.maskByShapefileAndStore(EVIFiles[i],EVIqualityFiles[i], county_masked)
             ###--------------------------------------------------------------------------###
             ###    OPEN ALL 4 temporary files created get Quality data and mask by BA    ###
             ###--------------------------------------------------------------------------###
@@ -100,24 +101,25 @@ def main():
             EVIqualityData = EVIquality.GetRasterBand(1).ReadAsArray()              # Read in as an array
             EVIquality = None 
             ##--------------------------------------------------------------------------
-            BA          = gdal.Open(af.BA_temp)                                     # Read BA temporary file for current county in the loop
-            BABand      = BA.GetRasterBand(1)                                       # Read the band (layer)
-            BAData      = BABand.ReadAsArray().astype('float')                      # Import band as an array with type float
+            #BA          = gdal.Open(af.BA_temp)                                     # Read BA temporary file for current county in the loop
+            #BABand      = BA.GetRasterBand(1)                                       # Read the band (layer)
+            #BAData      = BABand.ReadAsArray().astype('float')                      # Import band as an array with type float
             ##--------------------------------------------------------------------------
-            BAquality     = gdal.Open(af.BAQA_temp)                                 # Open temporary BA quality file
-            BAqualityData = BAquality.GetRasterBand(1).ReadAsArray()                # Read in as an array
-            BAquality     = None 
+            #BAquality     = gdal.Open(af.BAQA_temp)                                 # Open temporary BA quality file
+            #BAqualityData = BAquality.GetRasterBand(1).ReadAsArray()                # Read in as an array
+            #BAquality     = None 
             #--------------------------------------------------------------------------
-            BAScaled    = af.get_scaled_df(BABand,BAData,BAscaleFactor)             # Apply the scale factor using simple multiplication
-            BA          = None                                                      # Close the GeoTIFF file
+            #BAScaled    = af.get_scaled_df(BABand,BAData,BAscaleFactor)             # Apply the scale factor using simple multiplication
+            #BA          = None                                                      # Close the GeoTIFF file
             EVIScaled   = af.get_scaled_df(EVIBand,EVIData,EVIscaleFactor)          # Apply the scale factor using simple multiplication
             EVI         = None                                                      # Close the GeoTIFF file
  
             #----- MASK AND GET MEAN VALUE -----#
-            BA_masked   = np.ma.MaskedArray(BAScaled, np.in1d(BAqualityData, BAgoodQuality, invert = True))         # Apply QA mask to the BA data
+            #BA_masked   = np.ma.MaskedArray(BAScaled, np.in1d(BAqualityData, BAgoodQuality, invert = True))         # Apply QA mask to the BA data
             EVI_masked  = np.ma.MaskedArray(EVIScaled, np.in1d(EVIqualityData, EVIgoodQuality, invert = True))      # Apply QA mask to the EVI data
-            EVI_BA      = np.ma.MaskedArray(EVI_masked, np.in1d(BA_masked, BAVal, invert = True))                   # Mask array, include only BurnArea
-            EVI_mean    = np.mean(EVI_BA.compressed())                                                              # Get EVI mean value of the Burn Area
+            #EVI_BA      = np.ma.MaskedArray(EVI_masked, np.in1d(BA_masked, BAVal, invert = True))                   # Mask array, include only BurnArea
+            #EVI_mean    = np.mean(EVI_BA.compressed())                                                              # Get EVI mean value of the Burn Area
+            EVI_mean    = np.mean(EVI_masked.compressed())                                                              # Get EVI mean value of the Burn Area
             currentTime = timer() - start                                                                           # calculate curretn running time
 
             #----- STORE IT IN RESULT DATAFRAME -----#
