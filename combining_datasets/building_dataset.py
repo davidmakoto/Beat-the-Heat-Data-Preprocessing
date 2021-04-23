@@ -9,7 +9,7 @@ import geopandas as gpd
 
 def main():
     #Load datasets
-    FireRec = pd.read_csv('mapdataall-4.csv')
+    FireRec = pd.read_csv('mapdataall.csv')
 
     FireRec.incident_county.unique()
 
@@ -46,15 +46,7 @@ def main():
     fireRecordData2 #Data in datetime format
     fireRecordData2.incident_county.unique()
 
-    def datesplit(data):
-      df= pd.concat([pd.DataFrame({'incident_county': row.incident_county,
-                             'BurnDate': pd.date_range(row.incident_dateonly_created, row.incident_dateonly_extinguished)},
-                              columns=['BurnDate','incident_county'])
-                              for i, row in data.iterrows()], ignore_index=True)
-      return pd.concat([pd.DataFrame({'incident_county': row.incident_county.split(', '),
-                             'BurnDate': row.BurnDate},
-                              columns=['BurnDate','incident_county'])
-                              for i, row in df.iterrows()], ignore_index=True)
+
 
     fireRecord = datesplit(fireRecordData2)  #Get all date in range of start and end date
     fireRecord.drop_duplicates(inplace=True)
@@ -126,13 +118,25 @@ def main():
 
     CA_Wildfires['NDVI'].isna().sum()
 
+    CA_Wildfires.sort_values(['County_FIP', 'Date'], ascending=[True, True], inplace=True, ignore_index=True)
+
     CA_Wildfires.to_csv('CA_Wildfires.csv')
 
-    def read_geojson_geodf():
-            """ Loading county boundaries via geojson - returns arr of county geometry shapes """
-            # source: https://gis.data.ca.gov/datasets/8713ced9b78a4abb97dc130a691a8695_0?geometry=-146.754%2C31.049%2C-91.251%2C43.258&page=7
-            CA_cnty_geojson_link = 'https://opendata.arcgis.com/datasets/8713ced9b78a4abb97dc130a691a8695_0.geojson'
-            return gpd.read_file(CA_cnty_geojson_link)
+def read_geojson_geodf():
+        """ Loading county boundaries via geojson - returns arr of county geometry shapes """
+        # source: https://gis.data.ca.gov/datasets/8713ced9b78a4abb97dc130a691a8695_0?geometry=-146.754%2C31.049%2C-91.251%2C43.258&page=7
+        CA_cnty_geojson_link = 'https://opendata.arcgis.com/datasets/8713ced9b78a4abb97dc130a691a8695_0.geojson'
+        return gpd.read_file(CA_cnty_geojson_link)
+
+def datesplit(data):
+  df= pd.concat([pd.DataFrame({'incident_county': row.incident_county,
+                         'BurnDate': pd.date_range(row.incident_dateonly_created, row.incident_dateonly_extinguished)},
+                          columns=['BurnDate','incident_county'])
+                          for i, row in data.iterrows()], ignore_index=True)
+  return pd.concat([pd.DataFrame({'incident_county': row.incident_county.split(', '),
+                         'BurnDate': row.BurnDate},
+                          columns=['BurnDate','incident_county'])
+                          for i, row in df.iterrows()], ignore_index=True)
 
 
 if __name__ == "__main__":
