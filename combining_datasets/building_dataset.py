@@ -41,7 +41,8 @@ def main():
 
     fireRecordData2
 
-    fireRecordData2[["incident_dateonly_extinguished","incident_dateonly_created"]]= fireRecordData2[["incident_dateonly_extinguished","incident_dateonly_created"]].apply(pd.to_datetime)
+# todo is this correct?
+    fireRecordData2[["incident_dateonly_extinguished","incident_dateonly_created"]] = fireRecordData2[["incident_dateonly_extinguished","incident_dateonly_created"]].apply(pd.to_datetime)
 
     fireRecordData2 #Data in datetime format
     fireRecordData2.incident_county.unique()
@@ -82,12 +83,14 @@ def main():
 
     TA['Date'] = pd.to_datetime(TA['Date'])
 
+    TA.sort_values(['County_FIP','Date'],ascending=[True,True],inplace=True,ignore_index=True)
+
     for county in fireRecord.incident_county.unique():
       FireRecordCounty = fireRecord.loc[fireRecord.incident_county==county]
       TACounty = TA.loc[TA.County_FIP==county]
       for i, row in FireRecordCounty.iterrows():
         sameDate = TACounty.loc[TACounty.Date==row.BurnDate]
-        TA.Class.iloc[sameDate.index[0]]= 'Fire'
+        TA.Class.iloc[sameDate.index[0]] = 'Fire'
 
     TA['Class'].value_counts()
 
@@ -129,10 +132,12 @@ def read_geojson_geodf():
         return gpd.read_file(CA_cnty_geojson_link)
 
 def datesplit(data):
+  #  splits multi day rows into singular day rows
   df= pd.concat([pd.DataFrame({'incident_county': row.incident_county,
                          'BurnDate': pd.date_range(row.incident_dateonly_created, row.incident_dateonly_extinguished)},
                           columns=['BurnDate','incident_county'])
                           for i, row in data.iterrows()], ignore_index=True)
+  #  splits
   return pd.concat([pd.DataFrame({'incident_county': row.incident_county.split(', '),
                          'BurnDate': row.BurnDate},
                           columns=['BurnDate','incident_county'])
