@@ -57,9 +57,10 @@ def main():
     COUNTY = pd.DataFrame(CA_counties_geodf, columns={'COUNTY_FIPS','COUNTY_NAME'})
 
     len(fireRecord.incident_county.unique())
-
-    for county_name in fireRecord.incident_county.unique():
-      if county_name not in COUNTY.COUNTY_NAME.unique():
+                                                             # explanation for this loop: gets rid of some county data that
+                                                             # had Mexico and Nevada incidents (perhaps overlaping with CA)
+    for county_name in fireRecord.incident_county.unique():  # loop through all counties in fire incident rec
+      if county_name not in COUNTY.COUNTY_NAME.unique():     # if fire incident county not in CA county list (if outside of CA -> remove)
         fireRecord.drop(fireRecord.loc[fireRecord.incident_county==county_name].index,inplace=True)
 
     for i, row in COUNTY.iterrows():
@@ -67,7 +68,7 @@ def main():
 
     len(fireRecord.incident_county.unique())
 
-    fireRecord.incident_county =  fireRecord.incident_county.astype(str).astype(int)
+    fireRecord.incident_county = fireRecord.incident_county.astype(str).astype(int)
 
     fireRecord
 
@@ -79,18 +80,25 @@ def main():
     NDVI = pd.read_csv('NDVI_Interpolated_2019_2020.csv')
     LST = pd.read_csv('LST_Interpolated_2019_2020.csv')
 
-    TA["Class"] = "No_fire"           #TA dataset
+    TA["Class"] = "No_fire"                                                  # TA dataset
 
     TA['Date'] = pd.to_datetime(TA['Date'])
 
     TA.sort_values(['County_FIP','Date'],ascending=[True,True],inplace=True,ignore_index=True)
 
-    for county in fireRecord.incident_county.unique():
-      FireRecordCounty = fireRecord.loc[fireRecord.incident_county==county]
-      TACounty = TA.loc[TA.County_FIP==county]
-      for i, row in FireRecordCounty.iterrows():
-        sameDate = TACounty.loc[TACounty.Date==row.BurnDate]
-        TA.Class.iloc[sameDate.index[0]] = 'Fire'
+    for county in fireRecord.incident_county.unique():                       # loops through unique counties
+      FireRecordCounty = fireRecord.loc[fireRecord.incident_county==county]  # accesses fireRecord to find (& return) any row with
+                                                                             # a county matching the specific cnty in loop
+
+                                                                             # TACounty is resulting df from both loops (NDVI and LST addeed later based off this)
+      TACounty = TA.loc[TA.County_FIP==county]                               # accesses TA (starting dataset) to return all rows as df
+                                                                             # with county matching current county in loop (fire or not)
+
+      for i, row in FireRecordCounty.iterrows():                             # loop through FireRecordCounty df
+        sameDate = TACounty.loc[TACounty.Date==row.BurnDate]                 # returns df of all rows where TACounty.Date has a fire
+
+        TA.Class.iloc[sameDate.index[0]] = 'Fire'                            # uses indexes from sameDate df to find corresponding rows in TA
+
 
     TA['Class'].value_counts()
 
@@ -123,7 +131,7 @@ def main():
 
     CA_Wildfires.sort_values(['County_FIP', 'Date'], ascending=[True, True], inplace=True, ignore_index=True)
 
-    CA_Wildfires.to_csv('CA_Wildfires.csv')
+    CA_Wildfires.to_csv('CA_Wildfires_by_county.csv')
 
 def read_geojson_geodf():
         """ Loading county boundaries via geojson - returns arr of county geometry shapes """
